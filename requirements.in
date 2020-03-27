@@ -1,0 +1,7 @@
+kafka-python
+gevent
+sqlalchemy
+alembic
+gevent
+psycopg2
+requests
