@@ -1,7 +1,12 @@
 kafka-python
 gevent
-sqlalchemy
+SQLAlchemy
 alembic
 gevent
 psycopg2
 requests
+pylint
+black
+flake8
+python-dotenv
+structlog
