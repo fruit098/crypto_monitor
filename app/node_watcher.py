@@ -78,14 +78,18 @@ class Watcher:
         ip_record = (
             SESSION.query(models.IP_Pool)
             .filter(models.IP_Pool == peer["ip"])
-            .one()
+            .one_or_none()
         )
+        if not ip_record:
+            ip_record = models.IP_Pool(ip=peer["ip"])
+
         if ip_record.node:
             log.warning(
                 "create_new_peer_record.node_has_ip_record", ip=peer["ip"]
             )
             return
-        node = models.Node(active=True, **peer)
+        included_keys = ["ip", "highest_protocol", "user_agent", "services"]
+        node = models.Node(active=True, **{k:v for k,v in peer.items() if k in included_keys})
         ip_record.node = node
         commit_session(SESSION)
 
