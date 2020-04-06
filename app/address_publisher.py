@@ -1,44 +1,51 @@
-from gevent import monkey
-
-monkey.patch_all()
-import gevent
 import json
 import requests
 from kafka import KafkaConsumer
 
-user = ""
-passwd = ""
+from app import settings
+import logging
+import multiprocessing
+
+log = logging.getLogger(__name__)
 
 
-def task(n, consumer):
+def task(n):
+    consumer = KafkaConsumer(
+        settings.TOPIC_NAME,
+        auto_offset_reset="earliest",
+        enable_auto_commit=True,
+        group_id="1",
+        value_deserializer=lambda m: json.loads(m.decode("utf-8")),
+    )
+
     while True:
-        print("getting ")
+        log.info("consumer.created")
         message = next(consumer)
-        print("got message")
-        payload = {
-            "method": "addnode",
-            "params": [f"{message.value['address']}:{message.value['port']}", "onetry"],
-        }
-        response = requests.post(
-            "https://prod.zaujec.tech:8331",
-            data=json.dumps(payload),
-            auth=(user, passwd),
-        )
-        print(f"Greenlet: {n} status_code: {response.status_code}")
+        try:
+            log.info("task.sending_paylod")
+            payload = {
+                "method": "addnode",
+                "params": [
+                    f"{message.value['address']}:{message.value['port']}",
+                    "onetry",
+                ],
+            }
+            response = requests.post(
+                "https://prod.zaujec.tech:8331",
+                data=json.dumps(payload),
+                auth=(settings.USER, settings.PASSWORD),
+            )
+            log.info("publisher.task_sent")
+        except Exception:
+            log.exception()
 
 
 def main():
-    threads = []
-    for i in range(50):
-        cons = KafkaConsumer(
-            "Bitcoin",
-            auto_offset_reset="earliest",
-            enable_auto_commit=True,
-            value_deserializer=lambda m: json.loads(m.decode("utf-8")),
-        )
-        threads.append(gevent.spawn(task, i, cons))
-
-        gevent.joinall(threads)
+    processes = []
+    for i in range(1, settings.TOPIC_PARTITIONS + 1):
+        worker = multiprocessing.Process(target=task, args=[i,])
+        processes.append(worker)
+        worker.start()
 
 
 if __name__ == "__main__":

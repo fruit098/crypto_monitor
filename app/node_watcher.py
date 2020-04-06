@@ -1,5 +1,7 @@
 import time
 import json
+import sys
+import signal
 
 import requests
 
@@ -33,12 +35,17 @@ class Watcher:
             peers_to_compare
         )
         non_active_peers = [
-            self.save_peer_activity_record(peer)
+            peer
             for peer in self.last_active_peers
             if peer not in active_peers
         ]
         for new_peer in new_peers:
             self.create_new_peer_record(new_peer)
+        self.save_inactive_peers(non_active_peers)
+
+    def save_inactive_peers(self, peers):
+        for peer in peers:
+            self.save_peer_activity_record(peer)
 
     def save_peer_activity_record(self, peer):
         ip_record = (
@@ -53,6 +60,7 @@ class Watcher:
             ),
             "end_of_activity": datetime.now(),
         }
+        node.active = False
         node.activities.append(activity_record)
         commit_session(SESSION)
 
@@ -77,7 +85,7 @@ class Watcher:
                 "create_new_peer_record.node_has_ip_record", ip=peer["ip"]
             )
             return
-        node = models.Node(**peer)
+        node = models.Node(active=True, **peer)
         ip_record.node = node
         commit_session(SESSION)
 
@@ -104,12 +112,19 @@ class Watcher:
         return response
 
 
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C!')
+    print("Saving last active peers")
+    watcher.save_inactive_peers(watcher.last_active_peers)
+    sys.exit(0)
+
 def main():
-    watcher = Watcher((settings.USER, settings.PASSWORD), settings.NODES)
     while True:
         watcher.observe()
         time.sleep(1)
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    watcher = Watcher((settings.USER, settings.PASSWORD), settings.NODES)
     main()
