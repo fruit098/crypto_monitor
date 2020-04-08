@@ -2,67 +2,62 @@ import time
 import json
 import sys
 import signal
+import pdb
 
-import requests
+from prometheus_client import start_http_server, Gauge, Counter
 
 import copy
 import logging
 from datetime import datetime
-from app import settings
-from app.database import SESSION, commit_session, models
+from .database import transactions
+from . import utils, settings, peer_factory
+from .request_wrapper import RequestWrapper
 
-payload = {"method": "getpeerinfo", "params": []}
 log = logging.getLogger(__name__)
+
+
+active_peers_metric = Gauge("node_watcher_active_peers", "Count of active peers")
+new_connection_metric = Counter("node_watcher_new_connection", "Count of new connections")
 
 
 class Watcher:
     def __init__(self, auth, nodes):
         self.nodes_to_watch = nodes
         self.auth = auth
-        self.last_active_peers = []
-        self.new_peers = {}
+        self.last_active_peers = set()
 
     def observe(self):
-        all_peers_found = []
+        all_peers_found = set()
         for node in self.nodes_to_watch:
+            log.info("observe.loop")
             peers_per_node = self.fetch_peers_from_node(node)
-            all_peers_found += self.unify_found_peers(peers_per_node)
+            all_peers_found.update(self.unify_found_peers(peers_per_node))
         self.compare_peers(all_peers_found)
         self.last_active_peers = all_peers_found
 
+    @staticmethod
+    def find_same_peers(peers):
+        same_peers_groups = []
+        for peer in peers:
+            same_peers = [poor for poor in peers if poor == peer and poor is not peer]
+            if len(same_peers) >= 2:
+                same_peers_groups.append(same_peers)
+        log.warning(f"same_peers_groups_len={len(same_peers_groups)}")
+        return same_peers_groups
+
     def compare_peers(self, peers_to_compare):
-        new_peers, active_peers = self.find_new_and_active_peers(
-            peers_to_compare
-        )
-        non_active_peers = [
-            peer
-            for peer in self.last_active_peers
-            if peer not in active_peers
-        ]
+        new_peers = peers_to_compare - self.last_active_peers
+        non_active_peers = self.last_active_peers - peers_to_compare
+
+        new_connection_metric.inc(len(new_peers))
+        active_peers_metric.set(len(peers_to_compare))
         for new_peer in new_peers:
-            self.create_new_peer_record(new_peer)
+            transactions.create_new_peer_record(new_peer)
         self.save_inactive_peers(non_active_peers)
 
     def save_inactive_peers(self, peers):
         for peer in peers:
-            self.save_peer_activity_record(peer)
-
-    def save_peer_activity_record(self, peer):
-        ip_record = (
-            SESSION.query(models.IP_Pool)
-            .filter(models.IP_Pool == peer["ip"])
-            .one()
-        )
-        node = ip_record.node
-        activity_record = {
-            "start_of_activity": datetime.fromtimestamp(
-                peer["start_of_activity"]
-            ),
-            "end_of_activity": datetime.now(),
-        }
-        node.active = False
-        node.activities.append(activity_record)
-        commit_session(SESSION)
+            transactions.save_peer_activity_record(peer)
 
     def find_new_and_active_peers(self, peers):
         new_peers = []
@@ -74,46 +69,15 @@ class Watcher:
                 active_peers.append(peer)
         return new_peers, active_peers
 
-    def create_new_peer_record(self, peer):
-        ip_record = (
-            SESSION.query(models.IP_Pool)
-            .filter(models.IP_Pool == peer["ip"])
-            .one_or_none()
-        )
-        if not ip_record:
-            ip_record = models.IP_Pool(ip=peer["ip"])
-
-        if ip_record.node:
-            log.warning(
-                "create_new_peer_record.node_has_ip_record", ip=peer["ip"]
-            )
-            return
-        included_keys = ["ip", "highest_protocol", "user_agent", "services"]
-        node = models.Node(active=True, **{k:v for k,v in peer.items() if k in included_keys})
-        ip_record.node = node
-        commit_session(SESSION)
-
     @staticmethod
     def unify_found_peers(peers):
-        wanted_attributes = {
-            "conntime": "start_of_activity",
-            "addr": "ip",
-            "version": "highest_protocol",
-            "subver": "user_agent",
-            "servicesnames": "services",
+        unified_peers = {
+            peer_factory.create_peer(peer) for peer in peers
         }
-        return [
-            dict((wanted_attributes[k], peer[k]) for k in wanted_attributes)
-            for peer in peers
-        ]
+        return unified_peers
 
     def fetch_peers_from_node(self, node):
-        response = requests.post(
-            node,
-            data=json.dumps(payload),
-            auth=(settings.USER, settings.PASSWORD),
-        ).json()["result"]
-        return response
+        return RequestWrapper.fetch_active_peers()
 
 
 def signal_handler(sig, frame):
@@ -130,5 +94,6 @@ def main():
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
+    start_http_server(8002)
     watcher = Watcher((settings.USER, settings.PASSWORD), settings.NODES)
     main()

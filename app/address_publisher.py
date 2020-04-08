@@ -2,42 +2,43 @@ from app import settings
 from app.request_wrapper import RequestWrapper
 from app.kafka_wrapper import Consumer
 
+from prometheus_client import Histogram, start_http_server
+
 import logging
 import threading
 import queue
+import time
 
 log = logging.getLogger(__name__)
+s = Histogram(f"address_publisher_processing_request_time", "Time of processing request", ["worker"])
 
-def worker(q):
+
+def worker(worker_number):
+    consumer = Consumer(group_id='test')
+    log.info(f"worker-{worker_number}.consumer_created")
+
     while True:
-        log.info(f"worker.getting_message.queue_size={q.qsize()}")
-        address = q.get()
-        log.info("worker.got_message")
+        log.info(f"worker-{worker_number}.getting_message")
+        address = consumer.get_message()
+        log.info(f"worker-{worker_number}.got_message")
         try:
-            RequestWrapper.post_new_node(address)
+            start_time = time.time()
+            RequestWrapper.post_new_peer(address)
+            request_time = time.time() - start_time
+            s.labels(f"{worker_number}").observe(request_time)
+
         except Exception:
-            log.warning("worker.address_posting_failed")
+            log.exception("worker.address_posting_failed")
 
 
 def main():
     threads = []
-    consumer = Consumer()
-    q = queue.Queue(10000)
-    for _ in range(1, settings.TOPIC_PARTITIONS + 1):
-        thread = threading.Thread(target=worker, args=[q, ])
+    for n in range(settings.WORKERS):
+        thread = threading.Thread(target=worker, args=[n, ])
         threads.append(thread)
         thread.start()
 
-    while True:
-        try:
-            address = consumer.get_message()
-        except Exception:
-            log.warning("main.error_getting_message")
-            continue
-        log.info(f"main.putting_message.queue_size={q.qsize()}")
-        q.put(address)
-        log.info("main.message_put")
-
 
 if __name__ == "__main__":
+    start_http_server(8001)
     main()

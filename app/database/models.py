@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Column, func, Boolean
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Column, func, Boolean, Integer
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
@@ -7,8 +7,8 @@ from . import BASE_MODEL
 
 class IP_Pool(BASE_MODEL):
     __tablename__ = "ip_pool"
-    id = Column(BigInteger, primary_key=True)
-    ip = Column(String, unique=True, index=True)
+    ip = Column(String(39), primary_key=True)
+    port = Column(Integer, primary_key=True)
     last_seen = Column(DateTime(timezone=True))
     inserted = Column(DateTime(timezone=True), server_default=func.now())
     node_id = Column(BigInteger, ForeignKey("node.id"))
