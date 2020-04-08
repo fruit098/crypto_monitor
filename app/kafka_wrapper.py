@@ -19,7 +19,7 @@ class Consumer:
 
     def get_message(self):
         log.info("consumer.get_message")
-        return next(self.consumer)
+        return next(self.consumer).value
 
 class Producer:
     def __init__(self, topic=settings.DEFAULT_TOPIC):

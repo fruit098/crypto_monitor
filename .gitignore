@@ -144,3 +144,5 @@ static
 
 #docker
 docker/*
+.basic-auth-password
+grafana-storage/*

@@ -24,6 +24,7 @@ mako==1.1.2               # via alembic
 markupsafe==1.1.1         # via mako
 mccabe==0.6.1             # via flake8, pylint
 pathspec==0.7.0           # via black
+prometheus-client==0.7.1  # via -r requirements.in
 psycopg2==2.8.4           # via -r requirements.in
 pycodestyle==2.5.0        # via flake8
 pyflakes==2.1.1           # via flake8

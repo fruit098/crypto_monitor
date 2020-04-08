@@ -10,3 +10,4 @@ black
 flake8
 python-dotenv
 structlog
+prometheus_client

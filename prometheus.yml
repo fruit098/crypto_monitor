@@ -1,0 +1,34 @@
+global:
+    scrape_interval: 1s
+    external_labels:
+        monitor: 'my-monitor'
+scrape_configs:
+    - job_name: 'prometheus'
+      static_configs:
+          - targets: ['localhost:9090']
+    - job_name: 'node_watcher'
+      static_configs:
+          - targets: ['host.docker.internal:8002']
+    - job_name: 'address_pooler'
+      static_configs:
+          - targets: ['host.docker.internal:8000']
+    - job_name: 'address_publisher'
+      static_configs:
+          - targets: ['host.docker.internal:8001']
+    - job_name: 'kafka'
+      scrape_interval: 4s
+      scrape_timeout: 3s
+      static_configs:
+          - targets: ['host.docker.internal:5556']
+    - job_name: 'netdata'
+      metrics_path: "/api/v1/allmetrics"
+      scheme: https
+      params:
+        format: [ prometheus ]
+      basic_auth:
+          username: "fruit"
+          password_file: "/etc/prometheus/.basic-auth-password"
+      static_configs:
+          - targets: ['prod.zaujec.tech:443']
+            
+
