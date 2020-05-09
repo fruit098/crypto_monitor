@@ -7,13 +7,15 @@ from . import settings
 log = logging.getLogger(__name__)
 
 class RequestWrapper:
-    @staticmethod
-    def _request_node(method, params=[]):
+    def __init__(self, rpc_address):
+        self.rpc_address = rpc_address
+
+    def _request_node(self, method, params=[]):
         log.info("_request_node")
         try:
             response = requests.post(
-                "https://prod.zaujec.tech:8331",
-                data=json.dumps({"method":method, "params":params}),
+                self.rpc_address,
+                data=json.dumps({"method": method, "params": params}),
                 auth=(settings.USER, settings.PASSWORD),
             )
             parsed_response = response.json()
@@ -27,12 +29,10 @@ class RequestWrapper:
             result = []
         return result
 
-    @staticmethod
-    def fetch_addresses():
-        return RequestWrapper._request_node("getnodeaddresses", [2500,])
+    def fetch_addresses(self):
+        return self._request_node("getnodeaddresses", [2500,])
 
-    @staticmethod
-    def post_new_peer(address):
+    def post_new_peer(self, address):
         log.info(f"_request_node.post_new_peer.address-{address}")
         payload = {
             "method": "addnode",
@@ -41,9 +41,8 @@ class RequestWrapper:
                 "onetry",
             ],
         }
-        RequestWrapper._request_node(**payload)
+        self._request_node(**payload)
 
-    @staticmethod
-    def fetch_active_peers():
+    def fetch_active_peers(self):
         log.info("_request_node.fetch_active_peers")
-        return RequestWrapper._request_node(method="getpeerinfo")
+        return self._request_node(method="getpeerinfo")

@@ -13,6 +13,7 @@ class Consumer:
             auto_offset_reset="earliest",
             enable_auto_commit=True,
             group_id=group_id,
+            bootstrap_servers=settings.KAFKA_SERVER,
             value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         )
         log.debug("consumer.created")
@@ -26,7 +27,8 @@ class Producer:
         log.debug("producer.init")
         self.topic = topic
         self.producer = kafka.KafkaProducer(
-            value_serializer=lambda m: json.dumps(m).encode("utf-8")
+            value_serializer=lambda m: json.dumps(m).encode("utf-8"),
+            bootstrap_servers=settings.KAFKA_SERVER
         )
         log.debug("producer.created")
 

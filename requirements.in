@@ -12,3 +12,6 @@ python-dotenv
 structlog
 prometheus_client
 flask
+click
+fastapi
+uvicorn

@@ -1,0 +1,33 @@
+version: '3'
+services:
+  node_watcher:
+    build: .
+    command: python -m app.node_watcher
+    env_file:
+        - .env
+    ports:
+        - "8002"
+  address_puller:
+    build: .
+    command: python -m app.address_puller
+    env_file:
+        - .env
+    ports:
+        - "8003"
+  address_publisher:
+    build: .
+    command: python -m app.address_publisher
+    env_file:
+        - .env
+    ports:
+        - "8001"
+  api:
+    build: .
+    command: uvicorn app.fast_api:app --reload 
+    env_file:
+        - .env
+    ports:
+        - "8000"
+
+
+

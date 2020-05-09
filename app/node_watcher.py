@@ -17,7 +17,9 @@ log = logging.getLogger(__name__)
 
 
 active_peers_metric = Gauge("node_watcher_active_peers", "Count of active peers")
-new_connection_metric = Counter("node_watcher_new_connection", "Count of new connections")
+new_connection_metric = Counter(
+    "node_watcher_new_connection", "Count of new connections"
+)
 
 
 class Watcher:
@@ -30,8 +32,8 @@ class Watcher:
         all_peers_found = set()
         for node in self.nodes_to_watch:
             log.info("observe.loop")
-            peers_per_node = self.fetch_peers_from_node(node)
-            all_peers_found.update(self.unify_found_peers(peers_per_node))
+            peers_per_node = Watcher.unify_found_peers(self.fetch_peers_from_node(node))
+            all_peers_found.update(peers_per_node)
         self.compare_peers(all_peers_found)
         self.last_active_peers = all_peers_found
 
@@ -42,7 +44,7 @@ class Watcher:
             same_peers = [poor for poor in peers if poor == peer and poor is not peer]
             if len(same_peers) >= 2:
                 same_peers_groups.append(same_peers)
-        log.warning(f"same_peers_groups_len={len(same_peers_groups)}")
+            log.warning("find_same_peers.same_peers_found")
         return same_peers_groups
 
     def compare_peers(self, peers_to_compare):
@@ -71,20 +73,19 @@ class Watcher:
 
     @staticmethod
     def unify_found_peers(peers):
-        unified_peers = {
-            peer_factory.create_peer(peer) for peer in peers
-        }
+        unified_peers = {peer_factory.create_peer(peer) for peer in peers}
         return unified_peers
 
     def fetch_peers_from_node(self, node):
-        return RequestWrapper.fetch_active_peers()
+        return RequestWrapper(node).fetch_active_peers()
 
 
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
+    print("You pressed Ctrl+C!")
     print("Saving last active peers")
     watcher.save_inactive_peers(watcher.last_active_peers)
     sys.exit(0)
+
 
 def main():
     while True:

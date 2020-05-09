@@ -13,7 +13,7 @@ class Peer:
         self.services = services
 
     def __hash__(self):
-        return hash(self.ip)
+        return hash(self.ip+self.port)
 
     def __eq__(self, other):
         if isinstance(other, Peer) and hash(self) == hash(other):

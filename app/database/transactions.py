@@ -71,30 +71,57 @@ def find_node_by_ip_and_port(ip, port):
     return bool(ip_record)
 
 
-def node_to_dict(ip):
+def ip_record_with_node_to_dict(ip_record):
+    node_dict = utils.subset_dict(
+        ip_record.node.__dict__,
+        ["user_agent", "active", "highest_protocol", "services"],
+    )
+
+    activities_dicts = []
+    for activity in ip_record.node.activities:
+        activities_dicts.append(
+            {
+                "start_of_activity": str(activity.start_of_activity),
+                "end_of_activity": str(activity.end_of_activity),
+            }
+        )
+    node_dict["activities"] = activities_dicts
+    node_dict["port"] = ip_record.port
+    return node_dict
+
+
+def find_nodes(ip):
     ip_records = SESSION.query(models.IP_Pool).filter(models.IP_Pool.ip == ip).all()
     nodes = []
     for ip_record in ip_records:
         if not ip_record or not ip_record.node:
             log.info("node_to_dict.ip_record_or_node_not_found")
             continue
-        log.info("node_to_dict.found_ip_record_with_node")
-
-        node_dict = utils.subset_dict(
-            ip_record.node.__dict__,
-            ["user_agent", "active", "highest_protocol", "services"],
-        )
-
-        activities_dicts = []
-        for activity in ip_record.node.activities:
-            activities_dicts.append(
-                {
-                    "start_of_activity": str(activity.start_of_activity),
-                    "end_of_activity": str(activity.end_of_activity),
-                }
-            )
-        node_dict["activities"] = activities_dicts
-        node_dict["ip"] = ip_records.ip
-        node_dict["port"] = ip_record.port
-        nodes.append(node_dict)
+        nodes.append(ip_record_with_node_to_dict(ip_record))
     return nodes
+
+
+def find_node(ip, port):
+    ip_record = (
+        SESSION.query(models.IP_Pool)
+        .filter(models.IP_Pool.ip == ip, models.IP_Pool.port == port)
+        .one_or_none()
+    )
+    if not ip_record or not ip_record.node:
+        return {}
+    return ip_record_with_node_to_dict(ip_record)
+
+
+def find_address(ip, port):
+    ip_record = (
+        SESSION.query(models.IP_Pool)
+        .filter(models.IP_Pool.ip == ip, models.IP_Pool.port == port)
+        .one_or_none()
+    )
+    if not ip_record:
+        return {}
+    ip_record_to_dict = utils.subset_dict(
+        ip_record.__dict__, ["ip", "port", "last_seen", "inserted"]
+    )
+    ip_record_to_dict["node_assign"] = bool(ip_record.node)
+    return ip_record_to_dict

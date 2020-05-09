@@ -11,7 +11,7 @@ scrape_configs:
           - targets: ['host.docker.internal:8002']
     - job_name: 'address_pooler'
       static_configs:
-          - targets: ['host.docker.internal:8000']
+          - targets: ['host.docker.internal:8003']
     - job_name: 'address_publisher'
       static_configs:
           - targets: ['host.docker.internal:8001']
