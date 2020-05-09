@@ -12,7 +12,7 @@ class RequestWrapper:
         log.info("_request_node")
         try:
             response = requests.post(
-                "https://prod.zaujec.tech:8331",
+                    "http://147.229.14.116:39999/bitcoin_rpc",
                 data=json.dumps({"method":method, "params":params}),
                 auth=(settings.USER, settings.PASSWORD),
             )

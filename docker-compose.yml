@@ -18,11 +18,11 @@ services:
       JMX_PORT: 1099
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  jmxexporter:
-    image: sscaling/jmx-prometheus-exporter
-    ports:
-      - "5556:5556"
-    environment:
-      SERVICE_PORT: 5556
-    volumes:
-      - ./jmxexporter.yml:/opt/jmx_exporter/config.yml
+#   jmxexporter:
+#     image: sscaling/jmx-prometheus-exporter
+#     ports:
+#       - "5556:5556"
+#     environment:
+#       SERVICE_PORT: 5556
+#     volumes:
+#       - ./jmxexporter.yml:/opt/jmx_exporter/config.yml
