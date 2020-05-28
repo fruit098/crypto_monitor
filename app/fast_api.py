@@ -1,3 +1,4 @@
+"fast_api.py - Simple API to expose DB data"
 from typing import List
 from datetime import datetime
 

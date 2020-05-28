@@ -1,3 +1,4 @@
+"address_publisher.py - Takes addresses from Kafka and submit them to node"
 from app import settings
 from app.request_wrapper import RequestWrapper
 from app.kafka_wrapper import Consumer

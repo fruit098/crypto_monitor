@@ -1,3 +1,4 @@
+"node_watcher.py -- Watches node and creates new peers recordsa and activity recors"
 import time
 import json
 import sys

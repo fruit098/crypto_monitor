@@ -1,3 +1,4 @@
+"address_puller.py - fetch addresses from nodes and publish them to Kafka and database"
 import time
 import logging
 from datetime import datetime
