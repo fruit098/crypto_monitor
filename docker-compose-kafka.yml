@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   zookeeper:
     image: wurstmeister/zookeeper
@@ -11,18 +11,19 @@ services:
       - "1099:1099"
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_CREATE_TOPICS: "${TOPIC_NAME}"
       KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka -Dcom.sun.management.jmxremote.rmi.port=1099"
       JMX_PORT: 1099
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  jmxexporter:
-    image: sscaling/jmx-prometheus-exporter
-    ports:
-      - "5556:5556"
-    environment:
-      SERVICE_PORT: 5556
-    volumes:
-      - ./jmxexporter.yml:/opt/jmx_exporter/config.yml
+#  jmxexporter:
+#    image: sscaling/jmx-prometheus-exporter
+#    ports:
+#      - "5556:5556"
+#    environment:
+#      SERVICE_PORT: 5556
+#    volumes:
+#      - ./jmxexporter.yml:/opt/jmx_exporter/config.yml
+
