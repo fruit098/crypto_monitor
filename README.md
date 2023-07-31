@@ -1,6 +1,6 @@
 # crypto_monitor
 
-Crypto_monitor is a platform for monitoring the Bitcoin network. The full thesis text is [[here][https://github.com/fruit098/crypto_monitor/blob/master/xzauje00.pdf]].
+Crypto_monitor is a platform for monitoring the Bitcoin network. The full thesis text is [here](https://github.com/fruit098/crypto_monitor/blob/master/xzauje00.pdf).
 ```
 .
 ├── app                          # Modules
