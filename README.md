@@ -1,6 +1,6 @@
 # crypto_monitor
 
-Crypto_monitor is a platform for monitoring the Bitcoin network. The full thesis text is [here](https://github.com/fruit098/crypto_monitor/blob/master/xzauje00.pdf).
+Crypto_monitor is a platform for monitoring the Bitcoin network. The monitoring is based on the manipulating the Bitcoin Cor client. The logic is implemented in the Python with the help of Apache Kafka as work queue. The platform are done by the Prometheus and visualized in the Grafana. The full thesis text is [here](https://github.com/fruit098/crypto_monitor/blob/master/xzauje00.pdf).
 ```
 .
 ├── app                          # Modules
